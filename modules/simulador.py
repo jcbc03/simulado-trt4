@@ -131,8 +131,7 @@ def criar_sessao(
             if len(gerais) < 30:
                 gerais = _completar(conn, gerais, "1=1", (), 30)
             especificas = _amostrar(conn, "peso = 2", (), 30)
-            if len(especificas) < 30:
-                especificas = _completar(conn, especificas, "peso = 2", (), 30)
+            # se faltam específicas, completa com qualquer questão fora das gerais
             if len(especificas) < 30:
                 ids_gerais = {r["id"] for r in gerais}
                 especificas = _completar(conn, especificas, "1=1", (), 30, excluir=ids_gerais)

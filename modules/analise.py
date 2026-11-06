@@ -74,9 +74,10 @@ def por_topico(df: pd.DataFrame) -> pd.DataFrame:
     )
     g["pct_acerto"] = (100 * g["acertos"] / g["total"]).round(1)
     g["tempo_medio"] = g["tempo_medio"].round(1)
-    # gargalo: baixo acerto + tempo alto relativo
+    # gargalo: acerto ruim (0-100) + lentidão relativa (0-100), pesos 65/35
     tempo_rel = (g["tempo_medio"] / g["tempo_esperado"].clip(lower=1)).clip(upper=3)
-    g["score_critico"] = ((100 - g["pct_acerto"]) * 0.7 + (tempo_rel * 30) * 0.3).round(1)
+    tempo_score = (tempo_rel / 3 * 100).clip(0, 100)
+    g["score_critico"] = ((100 - g["pct_acerto"]) * 0.65 + tempo_score * 0.35).round(1)
     return g.sort_values("score_critico", ascending=False)
 
 
