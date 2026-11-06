@@ -58,6 +58,12 @@ html, body, [class*="css"] {
   border: 1px solid rgba(15, 39, 64, 0.1);
   background: rgba(255,255,255,0.4);
   margin-bottom: 0.8rem;
+  line-height: 1.55;
+  font-size: 1.05rem;
+}
+
+.timer-row [data-testid="stMetricValue"] {
+  font-variant-numeric: tabular-nums;
 }
 
 .stButton > button {

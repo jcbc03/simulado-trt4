@@ -2,7 +2,9 @@
 
 App desktop/local **100% offline** para treino no formato das provas do TRT da 4ª Região (FCC): cronômetro por questão, mapa de desempenho e plano de nivelamento.
 
-## Como rodar
+## Como rodar (Windows)
+
+Duplo clique em `run.bat`, ou:
 
 ```bash
 pip install -r requirements.txt
@@ -10,7 +12,7 @@ python -m modules.importar_questoes
 streamlit run app.py
 ```
 
-A interface abre no navegador.
+Abre em http://localhost:8501
 
 ## Formato FCC
 

@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import sys
 import time
+from datetime import timedelta
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parent
@@ -19,7 +21,8 @@ from modules.analise import (
     resumo_geral,
     top_criticos,
 )
-from modules.db import DB_PATH, count_questoes, init_db
+from modules.db import DB_PATH, connect, count_questoes, init_db
+from modules.historico import format_tempo, importar_upload, limpar_historico
 from modules.importar_questoes import importar_padrao
 from modules.plano_estudo import gerar_plano, plano_para_dataframe, sugerir_questoes
 from modules.simulador import (
@@ -43,6 +46,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+W = "stretch"
+
 
 def bootstrap() -> None:
     init_db()
@@ -61,13 +66,20 @@ def load_css() -> None:
 
 
 def apply_theme(tema: str) -> None:
-    plotly_template = "plotly_white" if tema == "Claro" else "plotly_dark"
-    st.session_state["plotly_template"] = plotly_template
+    st.session_state["plotly_template"] = "plotly_white" if tema == "Claro" else "plotly_dark"
     if tema == "Escuro":
         st.markdown(
             """
             <style>
             .stApp { background: linear-gradient(180deg, #0a121b 0%, #122233 100%); color: #e8eef5; }
+            section[data-testid="stSidebar"] {
+              background: linear-gradient(180deg, #0b1622 0%, #101e2c 100%) !important;
+            }
+            .questao-box, .metric-card {
+              background: rgba(18, 34, 51, 0.75) !important;
+              border-color: rgba(255,255,255,0.08) !important;
+              color: #e8eef5 !important;
+            }
             </style>
             """,
             unsafe_allow_html=True,
@@ -100,25 +112,56 @@ def flush_tempo() -> None:
 
 def start_timer() -> None:
     st.session_state["questao_t0"] = time.time()
+    if "prova_t0" not in st.session_state or st.session_state.get("prova_t0") is None:
+        st.session_state["prova_t0"] = time.time()
+
+
+@st.fragment(run_every=timedelta(seconds=1))
+def painel_cronometro() -> None:
+    sess = st.session_state.get("sessao")
+    if not sess or sess.finalizada:
+        return
+    q = questao_atual(sess)
+    t0 = st.session_state.get("questao_t0") or time.time()
+    p0 = st.session_state.get("prova_t0") or time.time()
+    tempo_q = (q.tempo_segundos if q else 0) + (time.time() - t0)
+    tempo_p = time.time() - p0
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Tempo da questão", format_tempo(tempo_q))
+    c2.metric("Tempo da prova", format_tempo(tempo_p))
+    c3.metric("Esperado (questão)", format_tempo(q.tempo_medio_esperado if q else 90))
 
 
 bootstrap()
 load_css()
 
+if "tema" not in st.session_state:
+    st.session_state["tema"] = "Claro"
+
 with st.sidebar:
     st.markdown("### Simulador TRT4")
     st.caption("FCC · 100% offline · SQLite")
-    tema = st.radio("Tema", ["Claro", "Escuro"], horizontal=True)
+    tema = st.radio(
+        "Tema",
+        ["Claro", "Escuro"],
+        horizontal=True,
+        index=0 if st.session_state["tema"] == "Claro" else 1,
+    )
+    st.session_state["tema"] = tema
     pagina = st.radio(
         "Navegação",
         ["Dashboard", "Simulado", "Análise", "Plano de estudo", "Banco de questões"],
     )
     st.divider()
     st.metric("Questões no banco", count_questoes())
-    st.metric("Arquivo DB", DB_PATH.name)
+    st.caption(str(DB_PATH))
     if st.button("Reimportar banco padrão"):
         n = importar_padrao(regenerar_json=True)
         st.success(f"Importadas {n} questões")
+        st.rerun()
+    if st.button("Limpar histórico de respostas"):
+        n = limpar_historico()
+        st.warning(f"Histórico limpo ({n} registros)")
         st.rerun()
 
 apply_theme(tema)
@@ -148,28 +191,31 @@ if pagina == "Dashboard":
 
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(fig_radar_disciplinas(hist, template), use_container_width=True)
+        st.plotly_chart(fig_radar_disciplinas(hist, template), width=W, key="dash_radar")
     with right:
-        st.plotly_chart(fig_tempo_vs_acerto(hist, template), use_container_width=True)
+        st.plotly_chart(fig_tempo_vs_acerto(hist, template), width=W, key="dash_scatter")
 
     st.subheader("Top 10 tópicos críticos")
     crit = top_criticos(hist, 10)
     if crit.empty:
         st.info("Faça um simulado para gerar o mapa de pontos fortes e fracos.")
     else:
-        st.dataframe(crit, use_container_width=True, hide_index=True)
+        st.dataframe(crit, width=W, hide_index=True)
 
 elif pagina == "Simulado":
     if "sessao" not in st.session_state:
         st.session_state["sessao"] = None
         st.session_state["resultado"] = None
 
-    with st.expander("Configurar novo simulado", expanded=st.session_state["sessao"] is None):
+    with st.expander(
+        "Configurar novo simulado",
+        expanded=st.session_state["sessao"] is None and not st.session_state.get("resultado"),
+    ):
         modo = st.selectbox(
             "Modo",
             ["completo", "disciplina", "prova_antiga", "erros", "revisao"],
             format_func=lambda m: {
-                "completo": "Simulado completo (60q)",
+                "completo": "Simulado completo (60q · peso 1+2)",
                 "disciplina": "Por disciplina",
                 "prova_antiga": "Prova antiga (por ano)",
                 "erros": "Só erros",
@@ -187,6 +233,7 @@ elif pagina == "Simulado":
             try:
                 st.session_state["sessao"] = criar_sessao(modo, disciplina=disc, ano=ano)
                 st.session_state["resultado"] = None
+                st.session_state["prova_t0"] = time.time()
                 start_timer()
                 st.rerun()
             except Exception as e:
@@ -196,7 +243,10 @@ elif pagina == "Simulado":
     if sess and not sess.finalizada:
         q = questao_atual(sess)
         total = len(sess.questoes)
-        st.progress((sess.indice + 1) / total, text=f"Questão {sess.indice + 1} de {total}")
+        respondidas = sum(1 for qq in sess.questoes if qq.resposta)
+        st.progress((sess.indice + 1) / total, text=f"Questão {sess.indice + 1} de {total} · {respondidas} respondidas")
+        painel_cronometro()
+
         cols = st.columns(4)
         cols[0].write(f"**Disciplina:** {q.disciplina}")
         cols[1].write(f"**Tópico:** {q.topico}")
@@ -204,7 +254,6 @@ elif pagina == "Simulado":
         cols[3].write(f"**Ano/banca:** {q.ano or '—'} / {q.banca}")
 
         st.markdown(f'<div class="questao-box">{q.enunciado}</div>', unsafe_allow_html=True)
-        opcoes = [f"{k}) {v}" for k, v in q.alternativas.items()]
         labels = list(q.alternativas.keys())
         idx = labels.index(q.resposta) if q.resposta in labels else None
         escolha = st.radio(
@@ -214,7 +263,29 @@ elif pagina == "Simulado":
             index=idx,
             key=f"resp_{sess.sessao_id}_{sess.indice}",
         )
-        marcar = st.checkbox("Marcar para revisão", value=q.marcada_revisao)
+        marcar = st.checkbox(
+            "Marcar para revisão",
+            value=q.marcada_revisao,
+            key=f"rev_{sess.sessao_id}_{sess.indice}",
+        )
+
+        st.caption("Navegação rápida (● respondida · ◆ revisão · ○ em branco)")
+        nav_cols = st.columns(min(15, total))
+        for i, qq in enumerate(sess.questoes):
+            col = nav_cols[i % len(nav_cols)]
+            if qq.marcada_revisao:
+                label = f"◆{i+1}"
+            elif qq.resposta:
+                label = f"●{i+1}"
+            else:
+                label = f"○{i+1}"
+            if col.button(label, key=f"nav_{sess.sessao_id}_{i}"):
+                flush_tempo()
+                responder(sess, escolha)
+                marcar_revisao(sess, marcar)
+                navegar(sess, i)
+                start_timer()
+                st.rerun()
 
         b1, b2, b3, b4, b5 = st.columns(5)
         if b1.button("⟵ Anterior"):
@@ -244,36 +315,41 @@ elif pagina == "Simulado":
             responder(sess, escolha)
             marcar_revisao(sess, marcar)
             st.session_state["resultado"] = finalizar(sess)
+            st.session_state["prova_t0"] = None
             st.rerun()
-
-        rev = [i + 1 for i, qq in enumerate(sess.questoes) if qq.marcada_revisao]
-        if rev:
-            st.caption(f"Marcadas para revisão: {rev}")
 
     resultado = st.session_state.get("resultado")
     if resultado:
         st.success(
             f"Acertos: {resultado['acertos']}/{resultado['total']} "
             f"({resultado['pct_acerto']}%) · Pontos: {resultado['pontos']}/{resultado['pontos_max']} "
-            f"({resultado['pct_pontos']}%) · Tempo: {resultado['tempo_total']}s"
+            f"({resultado['pct_pontos']}%) · Tempo: {format_tempo(resultado['tempo_total'])}"
         )
-        st.dataframe(resultado["detalhe"], use_container_width=True, hide_index=True)
+        det = pd.DataFrame(resultado["detalhe"])
+        st.dataframe(det, width=W, hide_index=True)
+        if not det.empty:
+            st.plotly_chart(
+                fig_radar_disciplinas(carregar_historico(), template),
+                width=W,
+                key="resultado_radar",
+            )
         if st.button("Novo simulado"):
             st.session_state["sessao"] = None
             st.session_state["resultado"] = None
+            st.session_state["prova_t0"] = None
             st.rerun()
 
 elif pagina == "Análise":
     if hist.empty:
         st.info("Sem histórico. Conclua um simulado primeiro.")
     else:
-        st.plotly_chart(fig_heatmap_topicos(hist, template), use_container_width=True)
-        st.plotly_chart(fig_radar_disciplinas(hist, template), use_container_width=True)
-        st.plotly_chart(fig_tempo_vs_acerto(hist, template), use_container_width=True)
+        st.plotly_chart(fig_heatmap_topicos(hist, template), width=W, key="analise_heat")
+        st.plotly_chart(fig_radar_disciplinas(hist, template), width=W, key="analise_radar")
+        st.plotly_chart(fig_tempo_vs_acerto(hist, template), width=W, key="analise_scatter")
         st.subheader("Desempenho por disciplina")
-        st.dataframe(por_disciplina(hist), use_container_width=True, hide_index=True)
+        st.dataframe(por_disciplina(hist), width=W, hide_index=True)
         st.subheader("Tópicos mais críticos")
-        st.dataframe(top_criticos(hist, 10), use_container_width=True, hide_index=True)
+        st.dataframe(top_criticos(hist, 10), width=W, hide_index=True)
 
 elif pagina == "Plano de estudo":
     plano = gerar_plano(hist, dias=14, questoes_por_dia=20)
@@ -281,24 +357,31 @@ elif pagina == "Plano de estudo":
     st.write(plano["orientacao"])
     pri, cal = plano_para_dataframe(plano)
     st.subheader("Prioridades")
-    st.dataframe(pri, use_container_width=True, hide_index=True)
+    st.dataframe(pri, width=W, hide_index=True)
     st.subheader("Calendário (14 dias) + revisão espaçada")
-    st.dataframe(cal, use_container_width=True, hide_index=True)
+    st.dataframe(cal, width=W, hide_index=True)
     if not pri.empty and "disciplina" in pri.columns:
         foco = pri.iloc[0]
         st.subheader("Sugestão de questões para hoje")
         sug = sugerir_questoes(foco.get("disciplina"), foco.get("topico"), n=8)
-        st.dataframe(sug, use_container_width=True, hide_index=True)
+        st.dataframe(sug, width=W, hide_index=True)
 
 elif pagina == "Banco de questões":
-    import pandas as pd
-    from modules.db import connect
+    st.subheader("Importar questões (JSON ou Excel)")
+    up = st.file_uploader("Arquivo legal próprio", type=["json", "xlsx"])
+    if up and st.button("Importar arquivo"):
+        try:
+            n = importar_upload(up)
+            st.success(f"Banco agora com {n} questões")
+            st.rerun()
+        except Exception as e:
+            st.error(str(e))
 
     with connect() as conn:
         df = pd.read_sql_query(
             """
             SELECT id, ano, banca, disciplina, topico, dificuldade, peso, prova_ref, cargo,
-                   substr(enunciado, 1, 120) AS enunciado
+                   substr(enunciado, 1, 140) AS enunciado
             FROM questoes
             ORDER BY ano DESC, disciplina, id
             """,
@@ -320,6 +403,6 @@ elif pagina == "Banco de questões":
         view = view[view["peso"] == peso_f]
     st.caption(
         "Questões didáticas originais no estilo FCC/TRT4. "
-        "Enunciados oficiais da banca são protegidos; importe seu JSON/Excel legal se desejar."
+        "Enunciados oficiais da banca são protegidos por direitos autorais."
     )
-    st.dataframe(view, use_container_width=True, hide_index=True)
+    st.dataframe(view, width=W, hide_index=True)
