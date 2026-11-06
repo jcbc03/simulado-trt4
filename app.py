@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
@@ -66,41 +65,83 @@ def load_css() -> None:
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
-def apply_theme(tema: str) -> None:
-    escuro = tema == "Escuro"
-    st.session_state["plotly_template"] = "plotly_dark" if escuro else "plotly_white"
-    st.session_state["theme_colors"] = (
-        {
-            "paper": "#12171f",
-            "plot": "#0b0f14",
-            "font": "#e7e2d8",
-            "grid": "rgba(231,226,216,0.08)",
-            "accent": "#c4a35a",
-        }
-        if escuro
-        else {
+THEMES = {
+    "Claro": {
+        "text": "#152033",
+        "text_muted": "#5c6678",
+        "surface": "#fffcf7",
+        "border": "rgba(21, 32, 51, 0.10)",
+        "border_strong": "rgba(21, 32, 51, 0.16)",
+        "shadow": "0 8px 24px rgba(21, 32, 51, 0.06)",
+        "app_bg": (
+            "radial-gradient(900px 420px at 100% -5%, rgba(196,163,90,0.14), transparent 55%),"
+            "linear-gradient(180deg, #f3efe7 0%, #ebe6dc 100%)"
+        ),
+        "sidebar_bg": "linear-gradient(180deg, #faf7f1 0%, #f0ebe2 100%)",
+        "header_bg": "rgba(243, 239, 231, 0.78)",
+        "hero_bg": (
+            "radial-gradient(900px 360px at 8% -20%, rgba(196,163,90,0.35), transparent 55%),"
+            "linear-gradient(135deg, #12253a 0%, #1a3550 48%, #234860 100%)"
+        ),
+        "hero_text": "#f7f3ea",
+        "hero_sub": "rgba(247,243,234,0.88)",
+        "hero_border": "rgba(18, 37, 58, 0.35)",
+        "hero_shadow": "0 22px 48px rgba(18, 37, 58, 0.18)",
+        "input_bg": "#fffcf7",
+        "chart_surface": "#fffcf7",
+        "progress_track": "#e6dfd2",
+        "plotly": "plotly_white",
+        "fig": {
             "paper": "#fffcf7",
             "plot": "#f3efe7",
             "font": "#152033",
-            "grid": "rgba(21,32,51,0.08)",
+            "grid": "rgba(21,32,51,0.10)",
             "accent": "#c4a35a",
-        }
-    )
-    cls = "theme-escuro" if escuro else "theme-claro"
-    # aplica classe no shell Streamlit (iframe pai)
-    components.html(
-        f"""
-        <script>
-        const doc = window.parent.document;
-        const app = doc.querySelector('.stApp');
-        if (app) {{
-          app.classList.remove('theme-claro', 'theme-escuro');
-          app.classList.add('{cls}');
-        }}
-        </script>
-        """,
-        height=0,
-    )
+        },
+    },
+    "Escuro": {
+        "text": "#e8e3d9",
+        "text_muted": "#98a1af",
+        "surface": "#12171f",
+        "border": "rgba(232, 227, 217, 0.08)",
+        "border_strong": "rgba(232, 227, 217, 0.14)",
+        "shadow": "0 10px 28px rgba(0, 0, 0, 0.32)",
+        "app_bg": (
+            "radial-gradient(1000px 480px at 0% -10%, rgba(196,163,90,0.08), transparent 45%),"
+            "radial-gradient(800px 500px at 100% 110%, rgba(56,110,150,0.08), transparent 50%),"
+            "linear-gradient(180deg, #07090c 0%, #0b0f14 55%, #0a1018 100%)"
+        ),
+        "sidebar_bg": "linear-gradient(180deg, #0a0d12 0%, #0d1219 100%)",
+        "header_bg": "rgba(7, 9, 12, 0.78)",
+        "hero_bg": (
+            "radial-gradient(900px 380px at 12% -30%, rgba(196,163,90,0.20), transparent 50%),"
+            "linear-gradient(145deg, #0a1018 0%, #101820 45%, #142030 100%)"
+        ),
+        "hero_text": "#f3eee4",
+        "hero_sub": "rgba(232, 227, 217, 0.78)",
+        "hero_border": "rgba(232, 227, 217, 0.08)",
+        "hero_shadow": "0 24px 56px rgba(0, 0, 0, 0.45)",
+        "input_bg": "#161c26",
+        "chart_surface": "#12171f",
+        "progress_track": "#1a222e",
+        "plotly": "plotly_dark",
+        "fig": {
+            "paper": "#12171f",
+            "plot": "#0b0f14",
+            "font": "#e8e3d9",
+            "grid": "rgba(232,227,217,0.10)",
+            "accent": "#c4a35a",
+        },
+    },
+}
+
+
+def apply_theme(tema: str) -> None:
+    t = THEMES[tema]
+    st.session_state["plotly_template"] = t["plotly"]
+    st.session_state["theme_colors"] = t["fig"]
+    root = "".join(f"--{k.replace('_', '-')}: {v};" for k, v in t.items() if k != "fig")
+    st.markdown(f"<style>:root{{{root}}}</style>", unsafe_allow_html=True)
 
 
 def flush_tempo() -> None:
