@@ -84,12 +84,29 @@ def top_criticos(df: pd.DataFrame, n: int = 10) -> pd.DataFrame:
     return por_topico(df).head(n)
 
 
-def fig_radar_disciplinas(df: pd.DataFrame, template: str = "plotly_white"):
+def _style_fig(fig, template: str = "plotly_white", colors: dict | None = None):
+    c = colors or {}
+    fig.update_layout(
+        template=template,
+        paper_bgcolor=c.get("paper", "rgba(0,0,0,0)"),
+        plot_bgcolor=c.get("plot", "rgba(0,0,0,0)"),
+        font=dict(color=c.get("font", "#152033"), family="Instrument Sans, Segoe UI, sans-serif"),
+        margin=dict(l=40, r=24, t=56, b=40),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+    )
+    if c.get("grid"):
+        fig.update_xaxes(gridcolor=c["grid"], zerolinecolor=c["grid"])
+        fig.update_yaxes(gridcolor=c["grid"], zerolinecolor=c["grid"])
+    return fig
+
+
+def fig_radar_disciplinas(df: pd.DataFrame, template: str = "plotly_white", colors: dict | None = None):
     g = por_disciplina(df)
     if g.empty:
         fig = go.Figure()
-        fig.update_layout(title="Sem dados ainda", template=template)
-        return fig
+        fig.update_layout(title="Sem dados ainda")
+        return _style_fig(fig, template, colors)
+    accent = (colors or {}).get("accent", "#c4a35a")
     fig = go.Figure()
     fig.add_trace(
         go.Scatterpolar(
@@ -97,6 +114,8 @@ def fig_radar_disciplinas(df: pd.DataFrame, template: str = "plotly_white"):
             theta=g["disciplina"],
             fill="toself",
             name="% acerto",
+            line=dict(color=accent),
+            fillcolor="rgba(196,163,90,0.25)",
         )
     )
     fig.add_trace(
@@ -107,23 +126,27 @@ def fig_radar_disciplinas(df: pd.DataFrame, template: str = "plotly_white"):
             theta=g["disciplina"],
             fill="toself",
             name="tempo relativo",
+            line=dict(color="#6e90a8"),
+            fillcolor="rgba(110,144,168,0.18)",
         )
     )
     fig.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        polar=dict(
+            bgcolor="rgba(0,0,0,0)",
+            radialaxis=dict(visible=True, range=[0, 100], gridcolor=(colors or {}).get("grid")),
+            angularaxis=dict(gridcolor=(colors or {}).get("grid")),
+        ),
         title="Mapa de desempenho por disciplina",
-        template=template,
-        legend=dict(orientation="h"),
     )
-    return fig
+    return _style_fig(fig, template, colors)
 
 
-def fig_heatmap_topicos(df: pd.DataFrame, template: str = "plotly_white"):
+def fig_heatmap_topicos(df: pd.DataFrame, template: str = "plotly_white", colors: dict | None = None):
     g = por_topico(df)
     if g.empty:
         fig = go.Figure()
-        fig.update_layout(title="Sem dados ainda", template=template)
-        return fig
+        fig.update_layout(title="Sem dados ainda")
+        return _style_fig(fig, template, colors)
     pivot = g.pivot_table(index="disciplina", columns="topico", values="pct_acerto", aggfunc="mean")
     fig = px.imshow(
         pivot,
@@ -132,16 +155,15 @@ def fig_heatmap_topicos(df: pd.DataFrame, template: str = "plotly_white"):
         labels=dict(color="% acerto"),
         title="Heatmap de acerto por disciplina × tópico",
     )
-    fig.update_layout(template=template)
-    return fig
+    return _style_fig(fig, template, colors)
 
 
-def fig_tempo_vs_acerto(df: pd.DataFrame, template: str = "plotly_white"):
+def fig_tempo_vs_acerto(df: pd.DataFrame, template: str = "plotly_white", colors: dict | None = None):
     g = por_topico(df)
     if g.empty:
         fig = go.Figure()
-        fig.update_layout(title="Sem dados ainda", template=template)
-        return fig
+        fig.update_layout(title="Sem dados ainda")
+        return _style_fig(fig, template, colors)
     fig = px.scatter(
         g,
         x="tempo_medio",
@@ -153,5 +175,4 @@ def fig_tempo_vs_acerto(df: pd.DataFrame, template: str = "plotly_white"):
         title="Gargalos: tempo médio × % acerto",
         labels={"tempo_medio": "Tempo médio (s)", "pct_acerto": "% acerto"},
     )
-    fig.update_layout(template=template)
-    return fig
+    return _style_fig(fig, template, colors)

@@ -1,86 +1,359 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap');
 
 :root {
-  --font-sans: "DM Sans", "Segoe UI", sans-serif;
-  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Instrument Sans", "Segoe UI", sans-serif;
+  --font-display: "Newsreader", Georgia, serif;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --gold: #c4a35a;
+  --gold-strong: #d4b56a;
+  --gold-ink: #1a1408;
 }
 
-html, body, [class*="css"] {
-  font-family: var(--font-sans);
+html, body, [class*="css"], .stApp, .stMarkdown, .stText {
+  font-family: var(--font-sans) !important;
 }
 
+/* ——— Hero ——— */
 .hero {
-  padding: 1.4rem 1.6rem 1.2rem;
+  position: relative;
+  overflow: hidden;
+  padding: 1.55rem 1.7rem 1.35rem;
   border-radius: 18px;
-  background:
-    radial-gradient(1200px 400px at 10% -10%, rgba(196, 149, 74, 0.28), transparent 55%),
-    linear-gradient(135deg, #0f2740 0%, #163853 45%, #1d4a5f 100%);
-  color: #f7f1e8;
-  margin-bottom: 1.2rem;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 18px 40px rgba(15, 39, 64, 0.28);
+  margin-bottom: 1.35rem;
+  border: 1px solid transparent;
 }
 
 .hero h1 {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  margin: 0 0 0.35rem 0;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display) !important;
+  font-size: clamp(1.65rem, 2.4vw, 2.15rem);
+  margin: 0.35rem 0 0.4rem 0;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  line-height: 1.15;
 }
 
 .hero p {
   margin: 0;
-  opacity: 0.92;
-  max-width: 52rem;
-  line-height: 1.45;
-}
-
-.metric-card {
-  border-radius: 14px;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(15, 39, 64, 0.08);
-  background: rgba(255,255,255,0.55);
+  max-width: 46rem;
+  line-height: 1.5;
+  font-size: 0.98rem;
 }
 
 .badge {
   display: inline-block;
-  padding: 0.2rem 0.55rem;
+  padding: 0.22rem 0.65rem;
   border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: #c4954a;
-  color: #132536;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--gold);
+  color: var(--gold-ink);
 }
 
 .questao-box {
-  border-radius: 16px;
-  padding: 1.1rem 1.2rem;
-  border: 1px solid rgba(15, 39, 64, 0.1);
-  background: rgba(255,255,255,0.4);
-  margin-bottom: 0.8rem;
-  line-height: 1.55;
+  border-radius: var(--radius);
+  padding: 1.2rem 1.3rem;
+  margin-bottom: 0.9rem;
+  line-height: 1.6;
   font-size: 1.05rem;
+  border: 1px solid transparent;
 }
 
 .timer-row [data-testid="stMetricValue"] {
   font-variant-numeric: tabular-nums;
+  font-weight: 650 !important;
 }
 
 .stButton > button {
-  border-radius: 10px !important;
+  border-radius: var(--radius-sm) !important;
   font-weight: 600 !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
 }
 
-section[data-testid="stSidebar"] {
-  background: linear-gradient(180deg, #f7f1e8 0%, #eef3f7 100%);
+.stButton > button:hover {
+  transform: translateY(-1px);
 }
 
-[data-theme="dark"] .hero {
+/* =========================
+   TEMA CLARO — papel + tinta
+   ========================= */
+.stApp.theme-claro {
   background:
-    radial-gradient(1000px 380px at 0% 0%, rgba(196, 149, 74, 0.22), transparent 50%),
-    linear-gradient(135deg, #07111c 0%, #0d2133 50%, #123044 100%);
+    radial-gradient(900px 420px at 100% -5%, rgba(196, 163, 90, 0.14), transparent 55%),
+    radial-gradient(700px 380px at 0% 100%, rgba(30, 58, 95, 0.06), transparent 50%),
+    linear-gradient(180deg, #f3efe7 0%, #ebe6dc 100%) !important;
+  color: #152033 !important;
 }
 
-[data-theme="dark"] section[data-testid="stSidebar"] {
-  background: linear-gradient(180deg, #0b1622 0%, #101e2c 100%);
+.stApp.theme-claro .hero {
+  color: #f7f3ea;
+  background:
+    radial-gradient(900px 360px at 8% -20%, rgba(196, 163, 90, 0.35), transparent 55%),
+    linear-gradient(135deg, #12253a 0%, #1a3550 48%, #234860 100%);
+  border-color: rgba(18, 37, 58, 0.35);
+  box-shadow: 0 22px 48px rgba(18, 37, 58, 0.18);
+}
+
+.stApp.theme-claro .hero p { color: rgba(247, 243, 234, 0.88); }
+
+.stApp.theme-claro .questao-box {
+  background: #fffcf7;
+  border-color: rgba(21, 32, 51, 0.1);
+  color: #152033;
+  box-shadow: 0 8px 24px rgba(21, 32, 51, 0.04);
+}
+
+.stApp.theme-claro section[data-testid="stSidebar"] {
+  background:
+    linear-gradient(180deg, #faf7f1 0%, #f0ebe2 100%) !important;
+  border-right: 1px solid rgba(21, 32, 51, 0.08) !important;
+}
+
+.stApp.theme-claro [data-testid="stSidebar"] * {
+  color: #152033;
+}
+
+.stApp.theme-claro [data-testid="stSidebar"] .stCaption,
+.stApp.theme-claro [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+  color: #5c6678 !important;
+}
+
+.stApp.theme-claro [data-testid="stMetricValue"] { color: #12253a !important; }
+.stApp.theme-claro [data-testid="stMetricLabel"] { color: #5c6678 !important; }
+
+.stApp.theme-claro [data-testid="stExpander"] {
+  background: #fffcf7 !important;
+  border: 1px solid rgba(21, 32, 51, 0.1) !important;
+  border-radius: var(--radius) !important;
+}
+
+.stApp.theme-claro div[data-baseweb="select"] > div,
+.stApp.theme-claro .stTextInput input,
+.stApp.theme-claro .stNumberInput input,
+.stApp.theme-claro [data-baseweb="input"] {
+  background-color: #fffcf7 !important;
+  color: #152033 !important;
+  border-color: rgba(21, 32, 51, 0.14) !important;
+}
+
+.stApp.theme-claro .stRadio label,
+.stApp.theme-claro .stCheckbox label {
+  color: #152033 !important;
+}
+
+.stApp.theme-claro .stButton > button[kind="primary"],
+.stApp.theme-claro .stButton > button[data-testid="baseButton-primary"] {
+  background: linear-gradient(180deg, #d0b36a, #c4a35a) !important;
+  color: #1a1408 !important;
+  border: none !important;
+  box-shadow: 0 6px 16px rgba(196, 163, 90, 0.28);
+}
+
+.stApp.theme-claro .stButton > button:not([kind="primary"]):not([data-testid="baseButton-primary"]) {
+  background: #fffcf7 !important;
+  color: #152033 !important;
+  border: 1px solid rgba(21, 32, 51, 0.14) !important;
+}
+
+.stApp.theme-claro [data-testid="stDataFrame"],
+.stApp.theme-claro [data-testid="stTable"] {
+  background: #fffcf7 !important;
+  border-radius: var(--radius) !important;
+  border: 1px solid rgba(21, 32, 51, 0.08);
+}
+
+.stApp.theme-claro .stAlert,
+.stApp.theme-claro [data-testid="stAlert"] {
+  border-radius: var(--radius-sm) !important;
+}
+
+.stApp.theme-claro h1, .stApp.theme-claro h2, .stApp.theme-claro h3 {
+  color: #12253a !important;
+}
+
+.stApp.theme-claro hr {
+  border-color: rgba(21, 32, 51, 0.1) !important;
+}
+
+.stApp.theme-claro [data-testid="stProgressBar"] > div > div {
+  background: linear-gradient(90deg, #c4a35a, #8fa8bc) !important;
+}
+
+/* =========================
+   TEMA ESCURO — tinta profunda
+   ========================= */
+.stApp.theme-escuro {
+  background:
+    radial-gradient(1000px 480px at 0% -10%, rgba(196, 163, 90, 0.09), transparent 45%),
+    radial-gradient(800px 500px at 100% 110%, rgba(56, 110, 150, 0.08), transparent 50%),
+    linear-gradient(180deg, #07090c 0%, #0b0f14 55%, #0a1018 100%) !important;
+  color: #e7e2d8 !important;
+}
+
+.stApp.theme-escuro .hero {
+  color: #f3eee4;
+  background:
+    radial-gradient(900px 380px at 12% -30%, rgba(196, 163, 90, 0.22), transparent 50%),
+    linear-gradient(145deg, #0a1018 0%, #101820 45%, #142030 100%);
+  border-color: rgba(231, 226, 216, 0.08);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.45);
+}
+
+.stApp.theme-escuro .hero p { color: rgba(231, 226, 216, 0.78); }
+
+.stApp.theme-escuro .questao-box {
+  background: #12171f;
+  border-color: rgba(231, 226, 216, 0.08);
+  color: #e7e2d8;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.stApp.theme-escuro section[data-testid="stSidebar"] {
+  background:
+    linear-gradient(180deg, #0a0d12 0%, #0d1219 100%) !important;
+  border-right: 1px solid rgba(231, 226, 216, 0.06) !important;
+}
+
+.stApp.theme-escuro [data-testid="stSidebar"],
+.stApp.theme-escuro [data-testid="stSidebar"] p,
+.stApp.theme-escuro [data-testid="stSidebar"] span,
+.stApp.theme-escuro [data-testid="stSidebar"] label,
+.stApp.theme-escuro [data-testid="stSidebar"] .stMarkdown {
+  color: #e7e2d8 !important;
+}
+
+.stApp.theme-escuro [data-testid="stSidebar"] .stCaption,
+.stApp.theme-escuro [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+.stApp.theme-escuro [data-testid="stSidebar"] small {
+  color: #9aa3b2 !important;
+}
+
+.stApp.theme-escuro [data-testid="stMetricValue"] { color: #f3eee4 !important; }
+.stApp.theme-escuro [data-testid="stMetricLabel"] { color: #9aa3b2 !important; }
+
+.stApp.theme-escuro [data-testid="stExpander"] {
+  background: #12171f !important;
+  border: 1px solid rgba(231, 226, 216, 0.08) !important;
+  border-radius: var(--radius) !important;
+  color: #e7e2d8 !important;
+}
+
+.stApp.theme-escuro [data-testid="stExpander"] summary,
+.stApp.theme-escuro [data-testid="stExpander"] p,
+.stApp.theme-escuro [data-testid="stExpander"] span {
+  color: #e7e2d8 !important;
+}
+
+.stApp.theme-escuro div[data-baseweb="select"] > div,
+.stApp.theme-escuro .stTextInput input,
+.stApp.theme-escuro .stNumberInput input,
+.stApp.theme-escuro [data-baseweb="input"],
+.stApp.theme-escuro [data-baseweb="base-input"] {
+  background-color: #161c26 !important;
+  color: #e7e2d8 !important;
+  border-color: rgba(231, 226, 216, 0.12) !important;
+}
+
+.stApp.theme-escuro .stRadio label,
+.stApp.theme-escuro .stCheckbox label,
+.stApp.theme-escuro .stMarkdown,
+.stApp.theme-escuro .stCaption,
+.stApp.theme-escuro label {
+  color: #e7e2d8 !important;
+}
+
+.stApp.theme-escuro .stButton > button[kind="primary"],
+.stApp.theme-escuro .stButton > button[data-testid="baseButton-primary"] {
+  background: linear-gradient(180deg, #d4b56a, #c4a35a) !important;
+  color: #14100a !important;
+  border: none !important;
+  box-shadow: 0 8px 22px rgba(196, 163, 90, 0.22);
+}
+
+.stApp.theme-escuro .stButton > button:not([kind="primary"]):not([data-testid="baseButton-primary"]) {
+  background: #161c26 !important;
+  color: #e7e2d8 !important;
+  border: 1px solid rgba(231, 226, 216, 0.12) !important;
+}
+
+.stApp.theme-escuro [data-testid="stDataFrame"],
+.stApp.theme-escuro [data-testid="stTable"],
+.stApp.theme-escuro [data-testid="stDataFrameResizable"] {
+  background: #12171f !important;
+  border-radius: var(--radius) !important;
+  border: 1px solid rgba(231, 226, 216, 0.06);
+  color: #e7e2d8 !important;
+}
+
+.stApp.theme-escuro h1,
+.stApp.theme-escuro h2,
+.stApp.theme-escuro h3,
+.stApp.theme-escuro h4 {
+  color: #f3eee4 !important;
+}
+
+.stApp.theme-escuro hr {
+  border-color: rgba(231, 226, 216, 0.08) !important;
+}
+
+.stApp.theme-escuro [data-testid="stProgressBar"] > div {
+  background: #1a222e !important;
+}
+
+.stApp.theme-escuro [data-testid="stProgressBar"] > div > div {
+  background: linear-gradient(90deg, #c4a35a, #6e90a8) !important;
+}
+
+.stApp.theme-escuro [data-testid="stAlert"] {
+  background: #12171f !important;
+  border: 1px solid rgba(196, 163, 90, 0.25) !important;
+  color: #e7e2d8 !important;
+}
+
+.stApp.theme-escuro .stFileUploader,
+.stApp.theme-escuro [data-testid="stFileUploader"] {
+  background: #12171f !important;
+  border-radius: var(--radius) !important;
+}
+
+.stApp.theme-escuro [data-baseweb="tab-list"],
+.stApp.theme-escuro [role="radiogroup"] {
+  gap: 0.25rem;
+}
+
+/* Plotly / Vega containers */
+.stApp.theme-escuro [data-testid="stPlotlyChart"],
+.stApp.theme-claro [data-testid="stPlotlyChart"] {
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.stApp.theme-escuro [data-testid="stPlotlyChart"] {
+  background: #12171f;
+  border: 1px solid rgba(231, 226, 216, 0.06);
+  padding: 0.35rem;
+}
+
+.stApp.theme-claro [data-testid="stPlotlyChart"] {
+  background: #fffcf7;
+  border: 1px solid rgba(21, 32, 51, 0.08);
+  padding: 0.35rem;
+}
+
+/* Header Streamlit */
+.stApp.theme-escuro header[data-testid="stHeader"] {
+  background: rgba(7, 9, 12, 0.72) !important;
+  backdrop-filter: blur(10px);
+}
+
+.stApp.theme-claro header[data-testid="stHeader"] {
+  background: rgba(243, 239, 231, 0.75) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Main block padding rhythm */
+.stApp [data-testid="stMainBlockContainer"] {
+  padding-top: 1.4rem;
 }

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
@@ -66,37 +67,40 @@ def load_css() -> None:
 
 
 def apply_theme(tema: str) -> None:
-    st.session_state["plotly_template"] = "plotly_white" if tema == "Claro" else "plotly_dark"
-    if tema == "Escuro":
-        st.markdown(
-            """
-            <style>
-            .stApp { background: linear-gradient(180deg, #0a121b 0%, #122233 100%); color: #e8eef5; }
-            section[data-testid="stSidebar"] {
-              background: linear-gradient(180deg, #0b1622 0%, #101e2c 100%) !important;
-            }
-            .questao-box, .metric-card {
-              background: rgba(18, 34, 51, 0.75) !important;
-              border-color: rgba(255,255,255,0.08) !important;
-              color: #e8eef5 !important;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            """
-            <style>
-            .stApp {
-              background:
-                radial-gradient(900px 500px at 100% 0%, rgba(196,149,74,0.12), transparent 40%),
-                linear-gradient(180deg, #fbf7f0 0%, #eef3f7 100%);
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
+    escuro = tema == "Escuro"
+    st.session_state["plotly_template"] = "plotly_dark" if escuro else "plotly_white"
+    st.session_state["theme_colors"] = (
+        {
+            "paper": "#12171f",
+            "plot": "#0b0f14",
+            "font": "#e7e2d8",
+            "grid": "rgba(231,226,216,0.08)",
+            "accent": "#c4a35a",
+        }
+        if escuro
+        else {
+            "paper": "#fffcf7",
+            "plot": "#f3efe7",
+            "font": "#152033",
+            "grid": "rgba(21,32,51,0.08)",
+            "accent": "#c4a35a",
+        }
+    )
+    cls = "theme-escuro" if escuro else "theme-claro"
+    # aplica classe no shell Streamlit (iframe pai)
+    components.html(
+        f"""
+        <script>
+        const doc = window.parent.document;
+        const app = doc.querySelector('.stApp');
+        if (app) {{
+          app.classList.remove('theme-claro', 'theme-escuro');
+          app.classList.add('{cls}');
+        }}
+        </script>
+        """,
+        height=0,
+    )
 
 
 def flush_tempo() -> None:
@@ -140,12 +144,13 @@ if "tema" not in st.session_state:
 
 with st.sidebar:
     st.markdown("### Simulador TRT4")
-    st.caption("FCC · 100% offline · SQLite")
+    st.caption("FCC · offline · análise por tempo")
     tema = st.radio(
-        "Tema",
+        "Aparência",
         ["Claro", "Escuro"],
         horizontal=True,
         index=0 if st.session_state["tema"] == "Claro" else 1,
+        help="Tema claro (papel) ou escuro (tinta profunda).",
     )
     st.session_state["tema"] = tema
     pagina = st.radio(
@@ -166,6 +171,7 @@ with st.sidebar:
 
 apply_theme(tema)
 template = st.session_state.get("plotly_template", "plotly_white")
+tc = st.session_state.get("theme_colors")
 
 st.markdown(
     """
@@ -191,9 +197,9 @@ if pagina == "Dashboard":
 
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(fig_radar_disciplinas(hist, template), width=W, key="dash_radar")
+        st.plotly_chart(fig_radar_disciplinas(hist, template, tc), width=W, key="dash_radar")
     with right:
-        st.plotly_chart(fig_tempo_vs_acerto(hist, template), width=W, key="dash_scatter")
+        st.plotly_chart(fig_tempo_vs_acerto(hist, template, tc), width=W, key="dash_scatter")
 
     st.subheader("Top 10 tópicos críticos")
     crit = top_criticos(hist, 10)
@@ -329,7 +335,7 @@ elif pagina == "Simulado":
         st.dataframe(det, width=W, hide_index=True)
         if not det.empty:
             st.plotly_chart(
-                fig_radar_disciplinas(carregar_historico(), template),
+                fig_radar_disciplinas(carregar_historico(), template, tc),
                 width=W,
                 key="resultado_radar",
             )
@@ -343,9 +349,9 @@ elif pagina == "Análise":
     if hist.empty:
         st.info("Sem histórico. Conclua um simulado primeiro.")
     else:
-        st.plotly_chart(fig_heatmap_topicos(hist, template), width=W, key="analise_heat")
-        st.plotly_chart(fig_radar_disciplinas(hist, template), width=W, key="analise_radar")
-        st.plotly_chart(fig_tempo_vs_acerto(hist, template), width=W, key="analise_scatter")
+        st.plotly_chart(fig_heatmap_topicos(hist, template, tc), width=W, key="analise_heat")
+        st.plotly_chart(fig_radar_disciplinas(hist, template, tc), width=W, key="analise_radar")
+        st.plotly_chart(fig_tempo_vs_acerto(hist, template, tc), width=W, key="analise_scatter")
         st.subheader("Desempenho por disciplina")
         st.dataframe(por_disciplina(hist), width=W, hide_index=True)
         st.subheader("Tópicos mais críticos")
