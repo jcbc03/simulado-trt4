@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("TRT4_PORT", "8501"))
 HOST = "127.0.0.1"
+PID_FILE = ROOT / "data" / "streamlit.pid"
 
 
 def _ensure_path() -> None:
@@ -24,6 +25,24 @@ def _porta_livre(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.settimeout(0.5)
         return s.connect_ex((HOST, port)) != 0
+
+
+def _salvar_pid(pid: int) -> None:
+    PID_FILE.parent.mkdir(parents=True, exist_ok=True)
+    PID_FILE.write_text(str(pid), encoding="utf-8")
+
+
+def _encerrar(proc: subprocess.Popen) -> None:
+    if proc.poll() is not None:
+        return
+    try:
+        proc.terminate()
+        proc.wait(timeout=5)
+    except Exception:
+        try:
+            proc.kill()
+        except Exception:
+            pass
 
 
 def _bootstrap_db() -> None:
@@ -61,7 +80,6 @@ def main() -> int:
 
     port = PORT
     if not _porta_livre(port):
-        # já rodando: só abre o browser
         webbrowser.open(f"http://{HOST}:{port}")
         return 0
 
@@ -85,14 +103,17 @@ def main() -> int:
     for _ in range(60):
         time.sleep(0.5)
         if not _porta_livre(port):
+            _salvar_pid(proc.pid)
             webbrowser.open(url)
             return 0
         if proc.poll() is not None:
             print(f"Falha ao iniciar Streamlit. Veja {log}", file=sys.stderr)
             return 1
 
-    webbrowser.open(url)
-    return 0
+    # timeout: nao deixar processo órfão sem porta
+    _encerrar(proc)
+    print(f"Timeout ao iniciar Streamlit na porta {port}. Veja {log}", file=sys.stderr)
+    return 1
 
 
 if __name__ == "__main__":

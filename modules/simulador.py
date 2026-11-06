@@ -97,6 +97,23 @@ def _amostrar(conn, where: str, params: tuple, n: int) -> list:
     return random.sample(list(rows), n)
 
 
+def _completar(conn, atuais: list, where: str, params: tuple, n: int, excluir: set | None = None) -> list:
+    """Completa a lista até n itens sem descartar os já obtidos."""
+    out = list(atuais)
+    ids = {r["id"] for r in out} | set(excluir or ())
+    if len(out) >= n:
+        return out[:n]
+    candidatos = _amostrar(conn, where, params, n + len(ids) + 10)
+    for row in candidatos:
+        if row["id"] in ids:
+            continue
+        out.append(row)
+        ids.add(row["id"])
+        if len(out) >= n:
+            break
+    return out
+
+
 def criar_sessao(
     modo: str = "completo",
     *,
@@ -112,13 +129,13 @@ def criar_sessao(
         if modo == "completo":
             gerais = _amostrar(conn, "peso = 1", (), 30)
             if len(gerais) < 30:
-                gerais = _amostrar(conn, "1=1", (), min(30, _count(conn)))
+                gerais = _completar(conn, gerais, "1=1", (), 30)
             especificas = _amostrar(conn, "peso = 2", (), 30)
             if len(especificas) < 30:
-                faltam = 30 - len(especificas)
-                extras = _amostrar(conn, "peso = 1", (), faltam + 30)
-                ids = {r["id"] for r in gerais}
-                especificas = especificas + [r for r in extras if r["id"] not in ids][:faltam]
+                especificas = _completar(conn, especificas, "peso = 2", (), 30)
+            if len(especificas) < 30:
+                ids_gerais = {r["id"] for r in gerais}
+                especificas = _completar(conn, especificas, "1=1", (), 30, excluir=ids_gerais)
             rows = list(gerais) + list(especificas)
             random.shuffle(rows)
         elif modo == "disciplina":

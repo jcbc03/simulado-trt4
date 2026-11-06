@@ -141,6 +141,10 @@ load_css()
 
 if "tema" not in st.session_state:
     st.session_state["tema"] = "Claro"
+if "sessao" not in st.session_state:
+    st.session_state["sessao"] = None
+if "resultado" not in st.session_state:
+    st.session_state["resultado"] = None
 
 with st.sidebar:
     st.markdown("### Simulador TRT4")
@@ -209,10 +213,6 @@ if pagina == "Dashboard":
         st.dataframe(crit, width=W, hide_index=True)
 
 elif pagina == "Simulado":
-    if "sessao" not in st.session_state:
-        st.session_state["sessao"] = None
-        st.session_state["resultado"] = None
-
     with st.expander(
         "Configurar novo simulado",
         expanded=st.session_state["sessao"] is None and not st.session_state.get("resultado"),
