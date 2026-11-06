@@ -9,6 +9,8 @@ data/*.db-journal
 dist/
 build/
 *.spec
+data/launcher.log
+data/_upload_tmp*
 .codesight/
 graphify-out/
 .DS_Store

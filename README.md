@@ -2,9 +2,26 @@
 
 App desktop/local **100% offline** para treino no formato das provas do TRT da 4ª Região (FCC): cronômetro por questão, mapa de desempenho e plano de nivelamento.
 
-## Como rodar (Windows)
+## Instalação completa (Windows)
 
-Duplo clique em `run.bat`, ou:
+1. Baixe/extraia o pacote `dist/SimuladorTRT4-Instalador.zip`
+2. Execute **`instalar.bat`** (sem perguntas)
+3. O instalador:
+   - copia para `%LOCALAPPDATA%\SimuladorTRT4`
+   - cria ambiente virtual e instala dependências
+   - gera o banco de questões
+   - cria o atalho **Simulador TRT4** na Área de Trabalho (e no Menu Iniciar)
+   - abre o app no navegador
+
+Desinstalar: `%LOCALAPPDATA%\SimuladorTRT4\desinstalar.bat`
+
+Para gerar o ZIP de distribuição de novo:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/empacotar.ps1
+```
+
+## Desenvolvimento local
 
 ```bash
 pip install -r requirements.txt
@@ -12,7 +29,7 @@ python -m modules.importar_questoes
 streamlit run app.py
 ```
 
-Abre em http://localhost:8501
+Ou duplo clique em `run.bat`. Abre em http://localhost:8501
 
 ## Formato FCC
 
