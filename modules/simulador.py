@@ -195,8 +195,9 @@ def responder(sessao: SessaoSimulado, alternativa: str | None) -> None:
     q = questao_atual(sessao)
     if q is None:
         return
-    if alternativa:
-        q.resposta = alternativa.upper()
+    # defensivo: widget pode devolver None ou valor não-string
+    if isinstance(alternativa, str) and alternativa.strip():
+        q.resposta = alternativa.strip().upper()
 
 
 def marcar_revisao(sessao: SessaoSimulado, valor: bool = True) -> None:
@@ -270,17 +271,19 @@ def finalizar(sessao: SessaoSimulado, db_path=None) -> dict[str, Any]:
         conn.commit()
 
     sessao.finalizada = True
-    total = len(sessao.questoes) or 1
+    total = len(sessao.questoes)
     return {
         "sessao_id": sessao.sessao_id,
         "modo": sessao.modo,
         "total": total,
         "acertos": acertos,
-        "pct_acerto": round(100 * acertos / total, 1),
+        "pct_acerto": round(100 * acertos / total, 1) if total else 0.0,
         "pontos": pontos,
         "pontos_max": pontos_max,
-        "pct_pontos": round(100 * pontos / pontos_max, 1) if pontos_max else 0,
+        "pct_pontos": round(100 * pontos / pontos_max, 1) if pontos_max > 0 else 0.0,
+        "tem_peso": pontos_max > 0,
+        "respondidas": sum(1 for q in sessao.questoes if q.resposta),
         "tempo_total": round(tempo_total, 1),
-        "tempo_medio": round(tempo_total / total, 1),
+        "tempo_medio": round(tempo_total / total, 1) if total else 0.0,
         "detalhe": detalhe,
     }

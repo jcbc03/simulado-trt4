@@ -126,14 +126,25 @@ def painel_cronometro() -> None:
     if not sess or sess.finalizada:
         return
     q = questao_atual(sess)
-    t0 = st.session_state.get("questao_t0") or time.time()
-    p0 = st.session_state.get("prova_t0") or time.time()
+    t0 = st.session_state.get("questao_t0")
+    p0 = st.session_state.get("prova_t0")
+    if t0 is None:
+        st.session_state["questao_t0"] = t0 = time.time()
+    if p0 is None:
+        st.session_state["prova_t0"] = p0 = time.time()
     tempo_q = (q.tempo_segundos if q else 0) + (time.time() - t0)
     tempo_p = time.time() - p0
     c1, c2, c3 = st.columns(3)
     c1.metric("Tempo da questão", format_tempo(tempo_q))
     c2.metric("Tempo da prova", format_tempo(tempo_p))
     c3.metric("Esperado (questão)", format_tempo(q.tempo_medio_esperado if q else 90))
+
+
+def persistir_estado(sess, escolha, marcar) -> None:
+    """Grava resposta/tempo só quando há seleção explícita; mantém em branco caso contrário."""
+    if isinstance(escolha, str) and escolha:
+        responder(sess, escolha)
+    marcar_revisao(sess, marcar)
 
 
 bootstrap()
@@ -287,8 +298,7 @@ elif pagina == "Simulado":
                 label = f"○{i+1}"
             if col.button(label, key=f"nav_{sess.sessao_id}_{i}"):
                 flush_tempo()
-                responder(sess, escolha)
-                marcar_revisao(sess, marcar)
+                persistir_estado(sess, escolha, marcar)
                 navegar(sess, i)
                 start_timer()
                 st.rerun()
@@ -296,30 +306,26 @@ elif pagina == "Simulado":
         b1, b2, b3, b4, b5 = st.columns(5)
         if b1.button("⟵ Anterior"):
             flush_tempo()
-            responder(sess, escolha)
-            marcar_revisao(sess, marcar)
+            persistir_estado(sess, escolha, marcar)
             anterior(sess)
             start_timer()
             st.rerun()
         if b2.button("Próxima ⟶"):
             flush_tempo()
-            responder(sess, escolha)
-            marcar_revisao(sess, marcar)
+            persistir_estado(sess, escolha, marcar)
             proxima(sess)
             start_timer()
             st.rerun()
         destino = b3.number_input("Ir para", min_value=1, max_value=total, value=sess.indice + 1)
         if b4.button("Ir"):
             flush_tempo()
-            responder(sess, escolha)
-            marcar_revisao(sess, marcar)
+            persistir_estado(sess, escolha, marcar)
             navegar(sess, int(destino) - 1)
             start_timer()
             st.rerun()
         if b5.button("Finalizar e ver gabarito", type="primary"):
             flush_tempo()
-            responder(sess, escolha)
-            marcar_revisao(sess, marcar)
+            persistir_estado(sess, escolha, marcar)
             st.session_state["resultado"] = finalizar(sess)
             st.session_state["prova_t0"] = None
             st.rerun()
@@ -331,6 +337,11 @@ elif pagina == "Simulado":
             f"({resultado['pct_acerto']}%) · Pontos: {resultado['pontos']}/{resultado['pontos_max']} "
             f"({resultado['pct_pontos']}%) · Tempo: {format_tempo(resultado['tempo_total'])}"
         )
+        if resultado.get("respondidas", 0) < resultado["total"]:
+            st.warning(
+                f"{resultado['total'] - resultado['respondidas']} questão(ões) em branco — "
+                "contam como erro no resultado."
+            )
         det = pd.DataFrame(resultado["detalhe"])
         st.dataframe(det, width=W, hide_index=True)
         if not det.empty:
@@ -343,6 +354,7 @@ elif pagina == "Simulado":
             st.session_state["sessao"] = None
             st.session_state["resultado"] = None
             st.session_state["prova_t0"] = None
+            st.session_state["questao_t0"] = None
             st.rerun()
 
 elif pagina == "Análise":
