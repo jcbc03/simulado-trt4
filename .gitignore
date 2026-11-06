@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+data/trt4.db
+data/*.db-journal
+.streamlit/secrets.toml
+dist/
+build/
+*.spec
+.codesight/
+graphify-out/
+.DS_Store
+Thumbs.db
