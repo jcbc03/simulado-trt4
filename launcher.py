@@ -71,15 +71,15 @@ def main() -> int:
 
     log = ROOT / "data" / "launcher.log"
     log.parent.mkdir(parents=True, exist_ok=True)
-    log_f = open(log, "a", encoding="utf-8")
-    proc = subprocess.Popen(
-        _streamlit_cmd(port),
-        cwd=str(ROOT),
-        stdout=log_f,
-        stderr=subprocess.STDOUT,
-        creationflags=creation if sys.platform == "win32" else 0,
-        close_fds=True,
-    )
+    with open(log, "a", encoding="utf-8") as log_f:
+        proc = subprocess.Popen(
+            _streamlit_cmd(port),
+            cwd=str(ROOT),
+            stdout=log_f,
+            stderr=subprocess.STDOUT,
+            creationflags=creation if sys.platform == "win32" else 0,
+            close_fds=True,
+        )
 
     url = f"http://{HOST}:{port}"
     for _ in range(60):
