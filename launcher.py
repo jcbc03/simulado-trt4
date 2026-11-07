@@ -10,7 +10,7 @@ import webbrowser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-PORT = int(os.environ.get("TRT4_PORT", "8501"))
+PORT = int(os.environ.get("TRT4_PORT", "8600"))
 HOST = "127.0.0.1"
 PID_FILE = ROOT / "data" / "streamlit.pid"
 

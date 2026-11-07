@@ -1,4 +1,4 @@
-# Simulador TRT4 — Fundação Carlos Chagas (FCC)
+﻿# Simulador TRT4 — Fundação Carlos Chagas (FCC)
 
 App desktop/local **100% offline** para treino no formato das provas do TRT da 4ª Região (FCC): cronômetro por questão, mapa de desempenho e plano de nivelamento.
 
@@ -29,7 +29,7 @@ python -m modules.importar_questoes
 streamlit run app.py
 ```
 
-Ou duplo clique em `run.bat`. Abre em http://localhost:8501
+Ou duplo clique em `run.bat`. Abre em http://localhost:8600
 
 ## Formato FCC
 

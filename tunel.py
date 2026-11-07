@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-PORT = 8501
+PORT = 8600
 CANDIDATOS = [
     Path(r"C:\Program Files (x86)\cloudflared\cloudflared.exe"),
     Path(r"C:\Program Files\cloudflared\cloudflared.exe"),
